@@ -81,7 +81,7 @@ async function isExistingUser(uid, password) {
 	`
 	return new Promise((resolve, reject) => {
 		open(database).then((db) => {
-			db.all(query).then(rows => {
+			db.all(query).then((rows) => {
 				// only one valid entry can be in users table
 				const row = rows[0]
 				resolve(
@@ -95,5 +95,23 @@ async function isExistingUser(uid, password) {
 	})
 }
 
-export { isExistingUser }
+// get all the slots for a warden
+async function getSlots(uid) {
+	const query = `
+		SELECT * FROM slots
+		WHERE withuid = '${uid}'
+	`
+
+	return new Promise((resolve, reject) => {
+		open(database).then((db) => {
+			db.all(query).then((rows) => {
+				resolve(rows)
+			}).catch((err) => {
+				throw new Error(`Database error: ${err}`)
+			})
+		})
+	})
+}
+
+export { isExistingUser, getSlots }
 

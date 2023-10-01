@@ -10,7 +10,10 @@ import jwt from "jsonwebtoken"
 import bodyParser from "body-parser"
 import ViteExpress from "vite-express"
 
-import { isExistingUser } from "./db/helper.js"
+import {
+  isExistingUser,
+  getSlots,
+} from "./db/helper.js"
 
 // load env variables
 import dotenv from 'dotenv'
@@ -37,11 +40,10 @@ function verifyToken(req, res, next) {
 
   const id = jwt.verify(token, JWT_SECRET, (err) => {
     if (err) return res.sendStatus(403)
-
-    res.user = { id }
-
-    next()
   })
+
+  res.user = { id }
+  next()
 }
 
 
@@ -63,6 +65,22 @@ app.post('/login', async (req, res) => {
     res.status(401).json({ message: 'Invalid credentials' })
   }
 });
+
+/*
+  get booked slots / appointments
+  Warden B can book time slot of warden A.
+  When warden A logs in and checks, A can see
+  all the appointments: warden name and time slot
+
+  every slot is 1 hour long  
+*/
+
+app.post('/bookedslots', verifyToken, async (req, res) => {
+  const uid = res.uid
+  const slots = getSlots(uid)
+  return res.json({ slots })
+})
+
 
 ViteExpress.listen(app, 80, () =>
   console.log("Server is listening on port 80...")

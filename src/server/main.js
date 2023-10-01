@@ -22,7 +22,28 @@ const app = express()
 app.use(bodyParser.json())
 
 // token for JWT
-const secretKey = process.env.VITE_SECRET;
+const JWT_SECRET = process.env.VITE_SECRET
+
+function generateToken(data) {
+  return jwt.sign(data, JWT_SECRET)
+}
+
+
+function verifyToken(req, res, next) {
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+
+  if (token == null) return res.sendStatus(401)
+
+  const id = jwt.verify(token, JWT_SECRET, (err) => {
+    if (err) return res.sendStatus(403)
+
+    res.user = { id }
+
+    next()
+  })
+}
+
 
 /*
   test path that says "Hello!"
@@ -35,9 +56,9 @@ app.get("/hello", (req, res) => {
 app.post('/login', async (req, res) => {
   const { uid, password } = req.body
   const userExists = await isExistingUser(uid, password)
-  console.log("user exists", userExists)
   if (userExists) {
-    res.status(200).json({ message: 'Valid credentials' })
+    const token = generateToken({ uid })
+    res.status(200).json({ token })
   } else {
     res.status(401).json({ message: 'Invalid credentials' })
   }

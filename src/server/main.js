@@ -1,10 +1,3 @@
-/*
-const express = require("express")
-const jwt = require("jsonwebtoken")
-const bodyParser = require('body-parser')
-const ViteExpress = require("vite-express");
-*/
-
 import express from "express"
 import jwt from "jsonwebtoken"
 import bodyParser from "body-parser"
@@ -14,6 +7,7 @@ import {
   isExistingUser,
   getBookedSlots,
   getFreeSlots,
+  bookSlot,
 } from "./db/helper.js"
 
 // load env variables
@@ -39,12 +33,16 @@ function verifyToken(req, res, next) {
 
   if (token == null) return res.sendStatus(401)
 
-  const id = jwt.verify(token, JWT_SECRET, (err) => {
+  const uid = jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) return res.sendStatus(403)
-  })
 
-  res.user = { id }
-  next()
+    try {
+      res.uid = decoded.uid
+      next()
+    } catch (err) {
+      return res.sendStatus(501)
+    }
+  })
 }
 
 
@@ -70,7 +68,7 @@ app.post('/login', async (req, res) => {
 /*
   get booked slots / appointments
   Warden A can book time slot of warden B.
-  When warden B logs in and checks, A can see
+  When warden B logs in and checks, B can see
   all the appointments: warden name and time slot
 
   every slot is 1 hour long  
@@ -78,8 +76,8 @@ app.post('/login', async (req, res) => {
 
 app.post('/bookedslots', verifyToken, async (req, res) => {
   const uid = res.uid
-  const slots = await getBookedSlots(uid)
-  return res.json({ slots })
+  const bookedSlots = await getBookedSlots(uid)
+  return res.json({ bookedSlots })
 })
 
 /*
@@ -91,9 +89,22 @@ app.post('/bookedslots', verifyToken, async (req, res) => {
 
 app.post('/freeslots', verifyToken, async (req, res) => {
   const uid = res.uid
-  const slots = await getFreeSlots(uid)
-  return res.json({ slots })
+  const freeSlots = await getFreeSlots(uid)
+  return res.json({ freeSlots })
 })
+
+/*
+  book a slot with warden
+  given the sid (slot id from slots table)
+*/
+app.post('/bookslot', verifyToken, async (req, res) => {
+  const { sid } = req.body
+  const uid = res.uid
+  const booked = await bookSlot(sid, uid)
+  return res.json({ sid, booked })
+})
+
+
 
 
 ViteExpress.listen(app, 80, () =>

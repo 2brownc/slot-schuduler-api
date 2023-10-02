@@ -146,7 +146,7 @@ async function isExistingUser(uid, password) {
 async function getBookedSlots(uid) {
 	const query = `
 		SELECT * FROM slots
-		WHERE withuid = '${uid}' AND byuid IS NULL
+		WHERE withuid = '${uid}' AND byuid IS NOT NULL
 	`
 
 	return new Promise((resolve, reject) => {
@@ -166,7 +166,6 @@ async function getFreeSlots(uid) {
 		SELECT * FROM slots
 		WHERE byuid IS NULL
 	`
-
 	return new Promise((resolve, reject) => {
 		open(database).then((db) => {
 			db.all(query).then((rows) => {
@@ -178,9 +177,29 @@ async function getFreeSlots(uid) {
 	})
 }
 
+// book a free slot with a warden
+async function bookSlot(sid, uid) {
+	const query = `
+		UPDATE slots
+		SET byuid = '${uid}'
+		WHERE sid = '${sid}' AND byuid IS NULL
+	`
+
+	return new Promise((resolve, reject) => {
+		open(database).then((db) => {
+			db.run(query).then((result) => {
+				resolve(result?.changes === 1 || false)
+			}).catch((err) => {
+				throw new Error(`Database error: ${err}`)
+			})
+		})
+	})
+}
+
 export {
 	isExistingUser,
 	getBookedSlots,
 	getFreeSlots,
+	bookSlot,
 }
 

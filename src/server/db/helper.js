@@ -96,6 +96,26 @@ async function fillDefaultData(db) {
 				byuid: null,
 			},
 		]
+
+		// populate the default data
+		for (const {
+			sid,
+			slot,
+			withuid,
+			byuid,
+		} of defaultSlots) {
+			const query = `
+				INSERT INTO slots
+				(sid, slot, withuid, byuid)
+				VALUES (
+					'${sid}',
+					'${slot}',
+					'${withuid}',
+					${byuid}
+				)`
+
+			db.run(query)
+		}
 	}
 
 }
@@ -126,7 +146,7 @@ async function isExistingUser(uid, password) {
 async function getBookedSlots(uid) {
 	const query = `
 		SELECT * FROM slots
-		WHERE withuid = '${uid}'
+		WHERE withuid = '${uid}' AND byuid IS NULL
 	`
 
 	return new Promise((resolve, reject) => {
@@ -140,5 +160,27 @@ async function getBookedSlots(uid) {
 	})
 }
 
-export { isExistingUser, getSlots }
+// get all free slots to book for all the wardens
+async function getFreeSlots(uid) {
+	const query = `
+		SELECT * FROM slots
+		WHERE byuid IS NULL
+	`
+
+	return new Promise((resolve, reject) => {
+		open(database).then((db) => {
+			db.all(query).then((rows) => {
+				resolve(rows)
+			}).catch((err) => {
+				throw new Error(`Database error: ${err}`)
+			})
+		})
+	})
+}
+
+export {
+	isExistingUser,
+	getBookedSlots,
+	getFreeSlots,
+}
 

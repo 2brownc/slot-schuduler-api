@@ -12,7 +12,8 @@ import ViteExpress from "vite-express"
 
 import {
   isExistingUser,
-  getSlots,
+  getBookedSlots,
+  getFreeSlots,
 } from "./db/helper.js"
 
 // load env variables
@@ -68,8 +69,8 @@ app.post('/login', async (req, res) => {
 
 /*
   get booked slots / appointments
-  Warden B can book time slot of warden A.
-  When warden A logs in and checks, A can see
+  Warden A can book time slot of warden B.
+  When warden B logs in and checks, A can see
   all the appointments: warden name and time slot
 
   every slot is 1 hour long  
@@ -77,7 +78,20 @@ app.post('/login', async (req, res) => {
 
 app.post('/bookedslots', verifyToken, async (req, res) => {
   const uid = res.uid
-  const slots = getBookedSlots(uid)
+  const slots = await getBookedSlots(uid)
+  return res.json({ slots })
+})
+
+/*
+  get free slots
+  Warden A can login and see
+  free slots available to book
+  for other wardens.
+*/
+
+app.post('/freeslots', verifyToken, async (req, res) => {
+  const uid = res.uid
+  const slots = await getFreeSlots(uid)
   return res.json({ slots })
 })
 

@@ -1,10 +1,10 @@
-/*
-const sqlite3 = require('sqlite')
-const { open } = require('sqlite')
-*/
-
 import sqlite3 from 'sqlite3'
 import { open } from 'sqlite'
+import {
+	getHours,
+	setHours,
+	getUnixTime,
+} from 'date-fns'
 
 /*
 	create a databse and
@@ -59,11 +59,19 @@ async function fillDefaultData(db) {
 	}
 
 	// create slots table if it doesn't exist
+	const hoursFromNow = (hours) => {
+		const currentDateTime = new Date()
+		const currentHour = parseInt(getHours(currentDateTime))
+
+		const reqDateTime = setHours(currentDateTime, currentHour + hours)
+
+		return getUnixTime(reqDateTime)
+	}
 	if (slots.length === 0) {
 		db.exec(`
 			CREATE TABLE slots (
 			sid INTEGER PRIMARY KEY,
-			slot TEXT,
+			slot INTEGER,
 			withuid INTEGER NOT NULL,
 			byuid INTEGER DEFAULT NULL,
 			FOREIGN KEY (withuid) REFERENCES users (uid),
@@ -73,25 +81,25 @@ async function fillDefaultData(db) {
 		const defaultSlots = [
 			{
 				sid: 1,
-				slot: "1696480200",
+				slot: hoursFromNow(3),
 				withuid: 2,
 				byuid: null,
 			},
 			{
 				sid: 2,
-				slot: "1696566600",
+				slot: hoursFromNow(4),
 				withuid: 2,
 				byuid: null,
 			},
 			{
 				sid: 3,
-				slot: "1697085000",
+				slot: hoursFromNow(5),
 				withuid: 2,
 				byuid: null,
 			},
 			{
 				sid: 4,
-				slot: "1697171400",
+				slot: hoursFromNow(6),
 				withuid: 2,
 				byuid: null,
 			},
@@ -144,9 +152,13 @@ async function isExistingUser(uid, password) {
 
 // get all the booked slots for a warden
 async function getBookedSlots(uid) {
+	// don't consider slots booked in the past
+	const currentTime = getUnixTime(new Date())
 	const query = `
 		SELECT * FROM slots
-		WHERE withuid = '${uid}' AND byuid IS NOT NULL
+		WHERE withuid = '${uid}'
+		AND byuid IS NOT NULL
+		AND slot > ${currentTime}
 	`
 
 	return new Promise((resolve, reject) => {

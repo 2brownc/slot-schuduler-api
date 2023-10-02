@@ -64,11 +64,38 @@ async function fillDefaultData(db) {
 			CREATE TABLE slots (
 			sid INTEGER PRIMARY KEY,
 			slot TEXT,
-			byuid INTEGER NOT NULL,
 			withuid INTEGER NOT NULL,
+			byuid INTEGER DEFAULT NULL,
 			FOREIGN KEY (withuid) REFERENCES users (uid),
 			FOREIGN KEY (byuid) REFERENCES users (uid))
 		`);
+
+		const defaultSlots = [
+			{
+				sid: 1,
+				slot: "1696480200",
+				withuid: 2,
+				byuid: null,
+			},
+			{
+				sid: 2,
+				slot: "1696566600",
+				withuid: 2,
+				byuid: null,
+			},
+			{
+				sid: 3,
+				slot: "1697085000",
+				withuid: 2,
+				byuid: null,
+			},
+			{
+				sid: 4,
+				slot: "1697171400",
+				withuid: 2,
+				byuid: null,
+			},
+		]
 	}
 
 }
@@ -95,8 +122,8 @@ async function isExistingUser(uid, password) {
 	})
 }
 
-// get all the slots for a warden
-async function getSlots(uid) {
+// get all the booked slots for a warden
+async function getBookedSlots(uid) {
 	const query = `
 		SELECT * FROM slots
 		WHERE withuid = '${uid}'

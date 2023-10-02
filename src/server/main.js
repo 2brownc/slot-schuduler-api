@@ -77,7 +77,7 @@ app.post('/login', async (req, res) => {
 
 app.post('/bookedslots', verifyToken, async (req, res) => {
   const uid = res.uid
-  const slots = getSlots(uid)
+  const slots = getBookedSlots(uid)
   return res.json({ slots })
 })
 
